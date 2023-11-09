@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -21,7 +20,6 @@ class User(db.Model):
             # do not serialize the password, its a security breach
         }
 
-
 class Favorites(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -39,7 +37,6 @@ class Favorites(db.Model):
             "people_id": self.people_id,
             "vehicles_id": self.vehicles_id,
             "planets_id": self.planets_id,
-            # do not serialize the password, its a security breach
         }
 
 class People(db.Model):
@@ -49,7 +46,7 @@ class People(db.Model):
     mass = db.Column(db.Integer)
     hair_color = db.Column(db.String(80))
     skin_color = db.Column(db.String(80))
-    eye_color = db.Column(db.String(80))
+    eyes_color = db.Column(db.String(80))
     birth_year = db.Column(db.String(80))
     gender = db.Column(db.String(80))
     favorites = db.relationship('Favorites', backref='people', lazy=True)
@@ -68,8 +65,6 @@ class People(db.Model):
             "eyes_color": self.eyes_color,
             "birth_year": self.birth_year,
             "gender": self.gender,
-            "favorites": list(map(lambda favorites: favorites.serialize(), self.favorites))
-            # do not serialize the password, its a security breach
         }
 
 class Vehicles(db.Model):
@@ -102,8 +97,6 @@ class Vehicles(db.Model):
             "passengers": self.passengers,
             "cargo_capacity": self.cargo_capacity,
             "consumables": self.consumables,
-            "favorites": list(map(lambda favorites: favorites.serialize(), self.favorites))
-            # do not serialize the password, its a security breach
         }
 
 class Planets(db.Model):
@@ -134,6 +127,4 @@ class Planets(db.Model):
             "terrain": self.terrain,
             "surface_water": self.surface_water,
             "population": self.population,
-            "favorites": list(map(lambda favorites: favorites.serialize(), self.favorites))
-            # do not serialize the password, its a security breach
         }

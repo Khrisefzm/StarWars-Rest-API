@@ -2,14 +2,12 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
-from flask import Flask, request, jsonify, url_for
+from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, People, Vehicles, Planets, Favorites
-# from models import Person
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -28,37 +26,77 @@ CORS(app)
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
-
-
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
 
 # generate sitemap with all your endpoints
-
-
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
 
+@app.route('/people')
+def get_people():
+    people = People.query.all()
+    return jsonify([person.serialize() for person in people]), 200
+
+#in case the api require to create new people:
+@app.route('/people', methods=['POST'])
+def create_person():
+    data = request.json
+    new_person = People(
+            name=data.get("name"),
+            height=data.get("height"),
+            mass=data.get("mass"),
+            hair_color=data.get("hair_color"),
+            skin_color=data.get("skin_color"),
+            eyes_color=data.get("eyes_color"),
+            birth_year=data.get("birth_year"),
+            gender=data.get("gender"),
+        )
+    db.session.add(new_person)
+    db.session.commit()
+    return jsonify(new_person.serialize()), 200
+
+@app.route('/people/<int:person_id>')
+def get_single_person(person_id):
+    person = People.query.get(person_id)
+    return jsonify(person.serialize()), 200
+
+@app.route('/vehicles')
+def get_vehicles():
+    vehicles = Vehicles.query.all()
+    return jsonify([vehicle.serialize() for vehicle in vehicles]), 200
+
+@app.route('/vehicles/<int:vehicle_id>')
+def get_single_vehicle(vehicle_id):
+    vehicle = Vehicles.query.get(vehicle_id)
+    return jsonify(vehicle.serialize()), 200
+
+@app.route('/planets')
+def get_planets():
+    planets = Planets.query.all()
+    return jsonify([planet.serialize() for planet in planets]), 200
+
+@app.route('/planets/<int:planet_id>')
+def get_single_planet(planet_id):
+    planet = Planets.query.get(planet_id)
+    return jsonify(planet.serialize()), 200
 
 @app.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
-    return [user.to_json() for user in users], 200
-
+    return jsonify([user.serialize() for user in users]), 200
 
 @app.route('/users/<int:user_id>')
 def get_single_user(user_id):
     user = User.query.get(user_id)
     return jsonify(user.serialize()), 200
 
-
 @app.route('/users/<int:user_id>/favorites')
 def get_favorites():
     favorites = Favorites.query.all()
-    return [favorite.to_json() for favorite in favorites], 200
-
+    return jsonify([favorite.serialize() for favorite in favorites]), 200
 
 @app.route('/users/<int:user_id>/favorites/people/<int:person_id>', methods=['POST', 'DELETE'])
 def post_or_delete_favorite_person(person_id):
@@ -75,7 +113,6 @@ def post_or_delete_favorite_person(person_id):
         db.session.commit()
         return jsonify(favorite.serialize()), 200
 
-
 @app.route('/users/<int:user_id>/favorites/vehicles/<int:vehicle_id>', methods=['POST', 'DELETE'])
 def post_or_delete_favorite_vehicle(vehicle_id):
     if request.method == 'POST':
@@ -91,7 +128,6 @@ def post_or_delete_favorite_vehicle(vehicle_id):
         db.session.commit()
         return jsonify(favorite.serialize()), 200
 
-
 @app.route('/users/<int:user_id>/favorites/planets/<int:planet_id>', methods=['POST', 'DELETE'])
 def post_or_delete_favorite_planet(planet_id):
     if request.method == 'POST':
@@ -106,43 +142,6 @@ def post_or_delete_favorite_planet(planet_id):
         db.session.delete(favorite)
         db.session.commit()
         return jsonify(favorite.serialize()), 200
-
-
-@app.route('/people')
-def get_people():
-    people = People.query.all()
-    return [person.to_jason() for person in people], 200
-
-
-@app.route('/people/<int:person_id>')
-def get_single_person(person_id):
-    person = People.query.get(person_id)
-    return jsonify(person.serialize()), 200
-
-
-@app.route('/vehicles')
-def get_vehicles():
-    vehicles = Vehicles.query.all()
-    return [vehicle.to_jason() for vehicle in vehicles], 200
-
-
-@app.route('/vehicles/<int:vehicle_id>')
-def get_single_vehicle(vehicle_id):
-    vehicle = Vehicles.query.get(vehicle_id)
-    return jsonify(vehicle.serialize()), 200
-
-
-@app.route('/planets')
-def get_planets():
-    planets = Planets.query.all()
-    return [planet.to_jason() for planet in planets], 200
-
-
-@app.route('/planets/<int:planet_id>')
-def get_single_planet(planet_id):
-    planet = Planets.query.get(planet_id)
-    return jsonify(planet.serialize()), 200
-
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
