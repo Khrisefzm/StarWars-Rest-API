@@ -93,55 +93,33 @@ def get_single_user(user_id):
     user = User.query.get(user_id)
     return jsonify(user.serialize()), 200
 
-@app.route('/users/<int:user_id>/favorites')
-def get_favorites():
-    favorites = Favorites.query.all()
-    return jsonify([favorite.serialize() for favorite in favorites]), 200
-
-@app.route('/users/<int:user_id>/favorites/people/<int:person_id>', methods=['POST', 'DELETE'])
-def post_or_delete_favorite_person(person_id):
-    if request.method == 'POST':
-        favorite = Favorites(people_id=person_id)
-        db.session.add(favorite)
-        db.session.commit()
-        return jsonify(favorite.serialize()), 200
+@app.route('/users/<int:user_id>/favorites', methods=['GET', 'POST'])
+def get_favorites(user_id):
+    if request.method == 'GET':
+        user = User.query.get(user_id)
+        favorites = user.favorites
+        return jsonify([favorite.serialize() for favorite in favorites]), 200
     else:
-        favorite = Favorites.query.get(person_id)
-        if favorite is None:
-            raise APIException('User not found', status_code=404)
-        db.session.delete(favorite)
+        data = request.json
+        new_favorite=Favorites(
+            user_id=user_id
+            people_id=data.get("people_id"),
+            vehicles_id=data.get("vehicles_id"),
+            planets_id=data.get("planets_id")
+        )
+        db.session.add(new_favorite)
         db.session.commit()
-        return jsonify(favorite.serialize()), 200
+        return jsonify(new_favorite.serialize()), 200
 
-@app.route('/users/<int:user_id>/favorites/vehicles/<int:vehicle_id>', methods=['POST', 'DELETE'])
-def post_or_delete_favorite_vehicle(vehicle_id):
-    if request.method == 'POST':
-        favorite = Favorites(vehicles_id=vehicle_id)
-        db.session.add(favorite)
-        db.session.commit()
-        return jsonify(favorite.serialize()), 200
-    else:
-        favorite = Favorites.query.get(vehicle_id)
-        if favorite is None:
-            raise APIException('User not found', status_code=404)
-        db.session.delete(favorite)
-        db.session.commit()
-        return jsonify(favorite.serialize()), 200
+@app.route('favorites/<int:favorite_id>', methods=['DELETE'])
+def post_or_delete_favorite(favorite_id):
+    favorite = Favorites.query.get(favorite_id)
+    if favorite is None:
+        raise APIException('User not found', status_code=404)
+    db.session.delete(favorite)
+    db.session.commit()
+    return jsonify(favorite.serialize()), 200
 
-@app.route('/users/<int:user_id>/favorites/planets/<int:planet_id>', methods=['POST', 'DELETE'])
-def post_or_delete_favorite_planet(planet_id):
-    if request.method == 'POST':
-        favorite = Favorites(planets_id=planet_id)
-        db.session.add(favorite)
-        db.session.commit()
-        return jsonify(favorite.serialize()), 200
-    else:
-        favorite = Favorites.query.get(planet_id)
-        if favorite is None:
-            raise APIException('User not found', status_code=404)
-        db.session.delete(favorite)
-        db.session.commit()
-        return jsonify(favorite.serialize()), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
